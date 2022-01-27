@@ -16,7 +16,7 @@ class Policy(nn.Module):
         super(Policy, self).__init__()
         """
         This function initializes the different layers of the architecture.
-            
+        
         input:
             a_dim (type: int): dimension of the output
         """
@@ -27,6 +27,11 @@ class Policy(nn.Module):
         ########################
         #  Start of your code  #
         ########################
+        self.cnn1 = nn.Conv2d(3, 24, 5, stride=2)
+        self.cnn2 = nn.Conv2d(24, 36, 5, stride=2)
+        self.cnn3 = nn.Conv2d(36, 48, 5, stride=2)
+        self.cnn4 = nn.Conv2d(48, 64, 3, stride=1)
+        self.cnn5 = nn.Conv2d(64, 64, 3, stride=1)
 
         ########################
         #   End of your code   #
@@ -42,7 +47,10 @@ class Policy(nn.Module):
         ########################
         #  Start of your code  #
         ########################
-
+        self.fcn1 = nn.Linear(1152, 100)
+        self.fcn2 = nn.Linear(100, 50)
+        self.fcn3 = nn.Linear(50, 10)
+        self.last_layer = nn.Linear(10, a_dim)
         ########################
         #   End of your code   #
         ########################
@@ -53,7 +61,7 @@ class Policy(nn.Module):
         ########################
         #  Start of your code  #
         ########################
-
+        self.last_activation = nn.Sigmoid()
         ########################
         #   End of your code   #
         ########################
@@ -70,6 +78,7 @@ class Policy(nn.Module):
         x_cnn4 = self.relu(self.cnn4(x_cnn3))
         x_cnn5 = self.relu(self.cnn5(x_cnn4))
         x_flatten = x_cnn5.view(x_cnn5.shape[0], -1)
+        # print(x_flatten.shape)
         x_fcn1 = self.relu(self.fcn1(x_flatten))
         x_fcn2 = self.relu(self.fcn2(x_fcn1))
         x_fcn3 = self.relu(self.fcn3(x_fcn2))

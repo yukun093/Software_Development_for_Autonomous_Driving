@@ -8,7 +8,6 @@ Hint:
     The dataset is a modified and very small version of http://rpg.ifi.uzh.ch/RAMNet.html.
 """
 
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -16,7 +15,6 @@ import os
 import torch
 from torchvision import transforms
 from PIL import Image
-
 
 module_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -28,7 +26,7 @@ class MarkovProcess(torch.utils.data.Dataset):
             dir_name (type: str): data set path
             transform: transform of the state image
         """
-
+        tmp_self_image = []
         self.images = []
         steering = []
         throttle = []
@@ -47,6 +45,13 @@ class MarkovProcess(torch.utils.data.Dataset):
         ########################
         #  Start of your code  #
         ########################
+        for root, sub_dirs, files in os.walk(module_path):
+            for special_file in files:
+                if special_file.endswith('.png'):
+                    self.images.append(os.path.join(root, special_file))
+        for image in self.images:
+            tmp_self_image.append(image.split('\\')[-1])
+        self.images = tmp_self_image
 
         ########################
         #   End of your code   #
@@ -54,13 +59,69 @@ class MarkovProcess(torch.utils.data.Dataset):
 
         # Subtask 2:
         # ToDo: Uncomment these lines ("resampling code").
-        # # due to a higher sampling rate of vehicle action data we need to resample the actions and append
-        # # only every 40th measurement point
-        #        for idx, (steering_, throttle_, brake_) in enumerate(zip(steering_raw, throttle_raw, brake_raw)):
-        #            if idx % 40 == 0:
-        #                steering.append(steering_)
-        #                throttle.append(throttle_)
-        #                brake.append(brake_)
+        # due to a higher sampling rate of vehicle action data we need to resample the actions and append
+        # only every 40th measurement point
+        b_r = []
+        s_r = []
+        t_r = []
+
+        brake_raw = []
+        steering_raw = []
+        throttle_raw = []
+
+        # method1
+        for root, sub_dirs, files in os.walk(module_path):
+            for special_file in files:
+                if special_file.endswith('brake.txt'):
+                    b_r.append(os.path.join(root, special_file))
+
+        for br in b_r:
+            f = open(br)
+            line = f.readline()
+            line.strip('\n')
+            while line:
+                brake_raw.append(line)
+                line = f.readline()
+                line.strip('\n')
+        print(brake_raw)
+
+        # method2
+        for root, sub_dirs, files in os.walk(module_path):
+            for special_file in files:
+                if special_file.endswith('brake.txt'):
+                    s_r.append(os.path.join(root, special_file))
+
+        for sr in s_r:
+            f = open(sr)
+            line = f.readline()
+            line.strip('\n')
+            while line:
+                steering_raw.append(line)
+                line = f.readline()
+                line.strip('\n')
+        print(steering_raw)
+
+        # method3
+        for root, sub_dirs, files in os.walk(module_path):
+            for special_file in files:
+                if special_file.endswith('brake.txt'):
+                    t_r.append(os.path.join(root, special_file))
+
+        for tr in t_r:
+            f = open(tr)
+            line = f.readline()
+            line.strip('\n')
+            while line:
+                throttle_raw.append(line)
+                line = f.readline()
+                line.strip('\n')
+        print(throttle_raw)
+
+        for idx, (steering_, throttle_, brake_) in enumerate(zip(steering_raw, throttle_raw, brake_raw)):
+            if idx % 40 == 0:
+                steering.append(steering_)
+                throttle.append(throttle_)
+                brake.append(brake_)
 
         self.action = [steering, throttle, brake]
         self.action = np.array(self.action).T
@@ -88,7 +149,10 @@ class MarkovProcess(torch.utils.data.Dataset):
         ########################
         #  Start of your code  #
         ########################
-
+        state = self.images
+        action = self.action
+        if self.transform is not None:
+            state = self.transform(state)
         ########################
         #   End of your code   #
         ########################
