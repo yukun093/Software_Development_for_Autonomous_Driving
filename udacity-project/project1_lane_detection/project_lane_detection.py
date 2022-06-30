@@ -20,6 +20,17 @@ def get_hough_lines(edges_ROI):
     hough_lines =  cv2.HoughLinesP(edges_ROI, rho = 1.0, theta = np.pi / 180, threshold = 60, minLineLength = 40, maxLineGap = 20)
     return hough_lines
 
+
+
+def displaylane(img, hough_lines):
+    line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype = np.uint8)
+    if hough_lines is not None:
+            for line in hough_lines:
+                x1, y1, x2, y2 = line.reshape(4) # converting to 1d array
+                cv2.line(img, (x1, y1,), (x2, y2), color = (255, 0, 0), thickness = 2)
+    line_img = cv2.addWeighted(img, 0.8, line_img, 1, 1)
+    return line_img
+
 def laneDetection(img):
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     gf_kernel = 5
@@ -29,13 +40,8 @@ def laneDetection(img):
     edges = cv2.Canny(gf_gray, minVal, maxVal)
     edges_ROI = ROI(edges)
     hough_lines = get_hough_lines(edges_ROI)
-    line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype = np.uint8)
-    if hough_lines is not None:
-            for line in hough_lines:
-                x1, y1, x2, y2 = line.reshape(4) # converting to 1d array
-                cv2.line(img, (x1, y1,), (x2, y2), color = (255, 0, 0), thickness = 2)
-    res_img = cv2.addWeighted(img, 0.8, line_img, 1, 0)
-    return res_img
+    line_img = displaylane(img, hough_lines)
+    return line_img
 
 # detect lanes on the video
 def videolanes():
@@ -49,7 +55,7 @@ def videolanes():
         # Since the OS has a minimum time between switching threads,
         # the function will not wait exactly 1 ms, it will wait at least 1 ms,
         # depending on what else is running on your computer at that time.
-        if cv2.waitKey(1) & 0xFF == ord('q'): # wait for 1ms until the user presses the 'q' key to quit the while loop
+        if cv2.waitKey(25) & 0xFF == ord('q'): # wait for 1ms until the user presses the 'q' key to quit the while loop
             break
     videocap.release()
     cv2.destroyAllWindows()
