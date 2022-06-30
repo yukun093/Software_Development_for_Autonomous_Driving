@@ -20,14 +20,42 @@ def get_hough_lines(edges_ROI):
     hough_lines =  cv2.HoughLinesP(edges_ROI, rho = 1.0, theta = np.pi / 180, threshold = 60, minLineLength = 40, maxLineGap = 20)
     return hough_lines
 
+def calculate_coordinates(img, parameters):
+    slope, b_intercept = parameters
+    # Sets initial y1 as height from top down (bottom of the frame)
+    y1 = img.shape[0]
+    # Sets final y2 as 225(the larger the value is, the longer the line is) above the bottom of the frame
+    y2 = int(y1 - 225)
+    # Sets initial x2 as (y1 - b) / m since y1 = mx1 + b
+    x1 = int((y1 - b_intercept) / slope)
+    # Sets initial x2 as (y2 - b) / m since y2 = mx2 + b
+    x2 = int((y2 - b_intercept) / slope)
+    return np.array([x1, y1, x2, y2])
 
+def calculateLines(img ,hough_lines):
+    left = []
+    right = []
+    # iterate all lines that are detected
+    for line in hough_lines:
+        x1, y1, x2, y2 = line.reshape(4)
+        parameters = np.polyfit((x1, x2), (y1, y2), 1)
+        slope = parameters[0]
+        b_intercept = parameters[1]
+        if(slope < 0):
+            left.append((slope, b_intercept))
+        else:
+            right.append((slope, b_intercept))
+    left_avg = np.average(left, axis = 0)
+    right_avg = np.average(right, axis = 0)
+    left_line = calculate_coordinates(img, left_avg)
+    right_line = calculate_coordinates(img, right_avg)
+    return np.array([left_line, right_line])
 
-def displaylane(img, hough_lines):
+def displaylane(img, lines):
     line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype = np.uint8)
-    if hough_lines is not None:
-            for line in hough_lines:
-                x1, y1, x2, y2 = line.reshape(4) # converting to 1d array
-                cv2.line(img, (x1, y1,), (x2, y2), color = (255, 0, 0), thickness = 2)
+    if lines is not None:
+            for x1, y1, x2, y2 in lines:
+                cv2.line(img, (x1, y1,), (x2, y2), color = (0, 255, 0), thickness = 3) # color = (blue, green, red) for sequence
     line_img = cv2.addWeighted(img, 0.8, line_img, 1, 1)
     return line_img
 
@@ -40,7 +68,8 @@ def laneDetection(img):
     edges = cv2.Canny(gf_gray, minVal, maxVal)
     edges_ROI = ROI(edges)
     hough_lines = get_hough_lines(edges_ROI)
-    line_img = displaylane(img, hough_lines)
+    lines = calculateLines(img ,hough_lines)
+    line_img = displaylane(img, lines)
     return line_img
 
 # detect lanes on the video
@@ -55,7 +84,7 @@ def videolanes():
         # Since the OS has a minimum time between switching threads,
         # the function will not wait exactly 1 ms, it will wait at least 1 ms,
         # depending on what else is running on your computer at that time.
-        if cv2.waitKey(25) & 0xFF == ord('q'): # wait for 1ms until the user presses the 'q' key to quit the while loop
+        if cv2.waitKey(500) & 0xFF == ord('q'): # wait for 1ms until the user presses the 'q' key to quit the while loop
             break
     videocap.release()
     cv2.destroyAllWindows()
