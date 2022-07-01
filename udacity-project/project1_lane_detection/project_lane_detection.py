@@ -25,7 +25,7 @@ def calculate_coordinates(img, parameters):
     # Sets initial y1 as height from top down (bottom of the frame)
     y1 = img.shape[0]
     # Sets final y2 as 225(the larger the value is, the longer the line is) above the bottom of the frame
-    y2 = int(y1 - 225)
+    y2 = int(y1 * (3.4 / 5))
     # Sets initial x2 as (y1 - b) / m since y1 = mx1 + b
     x1 = int((y1 - b_intercept) / slope)
     # Sets initial x2 as (y2 - b) / m since y2 = mx2 + b
@@ -45,8 +45,10 @@ def calculateLines(img ,hough_lines):
             left.append((slope, b_intercept))
         else:
             right.append((slope, b_intercept))
+    # average out all the values for left and right into a single slope and b_intercept value for each line in the list
     left_avg = np.average(left, axis = 0)
     right_avg = np.average(right, axis = 0)
+    # calculate x1, x2, y1, y2 coordinates for one line
     left_line = calculate_coordinates(img, left_avg)
     right_line = calculate_coordinates(img, right_avg)
     return np.array([left_line, right_line])
@@ -70,25 +72,34 @@ def laneDetection(img):
     hough_lines = get_hough_lines(edges_ROI)
     lines = calculateLines(img ,hough_lines)
     line_img = displaylane(img, lines)
+    cv2.imshow('result', line_img)
     return line_img
+
+# detect lanes on the image
+def imagelanes():
+    imagecap = cv2.imread('./data/test_images/solidWhiteCurve.jpg')
+    detectedlines = laneDetection(imagecap)
+    plt.imshow(detectedlines)
+    plt.show()
 
 # detect lanes on the video
 def videolanes():
-    videocap = cv2.VideoCapture('./data/test_videos/solidWhiteRight.mp4')
-    while(videocap.isOpened()):
-        ret, frame = videocap.read()
-        frame = laneDetection(frame)
-        cv2.imshow('lane detection', frame)
+    cap = cv2.VideoCapture('./data/test_videos/solidWhiteRight.mp4')
+    while(cap.isOpened()):
+        ret, frame = cap.read()
+        detectedLines = laneDetection(frame)
+        # cv2.imshow('lane detection', detectedLines)
         # 1.waitKey(0) will display the window infinitely until any keypress (it is suitable for image display).
         # 2.waitKey(1) will display a frame for 1 ms, after which display will be automatically closed.
         # Since the OS has a minimum time between switching threads,
         # the function will not wait exactly 1 ms, it will wait at least 1 ms,
         # depending on what else is running on your computer at that time.
-        if cv2.waitKey(500) & 0xFF == ord('q'): # wait for 1ms until the user presses the 'q' key to quit the while loop
+        if cv2.waitKey(250) & 0xFF == ord('q'): # wait for 1ms until the user presses the 'q' key to quit the while loop
             break
-    videocap.release()
+    cap.release()
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
+    # imagelanes()
     videolanes()
 
